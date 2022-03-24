@@ -18,25 +18,15 @@ class TestDedicatedHosts(unittest.TestCase):
 
     def test_2r5_host(self):
         x = HostSorter()
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
+        for i in range(3):
+            x.addInstance(self.r5_12xl)
         x.placeInstances()
         self.assertEqual(len(x.hosts["r5"]), 2, "Should be 1 host")
 
     def test_6r5_host(self):
         x = HostSorter()
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)
-        x.addInstance(self.r5_12xl)        
+        for i in range(11):
+            x.addInstance(self.r5_12xl)
         x.placeInstances()
         self.assertEqual(len(x.hosts["r5"]), 6, "Should be 6 hosts")
 
@@ -44,6 +34,7 @@ class TestT3DedicatedHosts(unittest.TestCase):
     def setUp(self):
         self.t3_xl = EC2Instance("t3.xlarge", 4)
         self.t3_2xl = EC2Instance("t3.2xlarge", 8)
+        self.t3_medium = EC2Instance("t3.medium", 2)
         self.t3_small = EC2Instance("t3.small", 2)
         self.t3_micro = EC2Instance("t3.micro", 2)
         self.t3_nano = EC2Instance("t3.nano", 2)
@@ -66,6 +57,50 @@ class TestT3DedicatedHosts(unittest.TestCase):
             x.addInstance(self.t3_2xl)
         x.placeInstances()
         self.assertEqual(len(x.hosts["t3"]), 1, "Should be 1 hosts")
+
+    def test_1mixedt3_host2(self):
+        x = HostSorter()
+        for i in range(104):
+            x.addInstance(self.t3_micro)
+        for i in range(40):
+            x.addInstance(self.t3_small)
+        for i in range(16):
+            x.addInstance(self.t3_medium)
+        for i in range(16):
+            x.addInstance(self.t3_2xl)
+        x.placeInstances()
+        self.assertEqual(len(x.hosts["t3"]), 1, "Should be 1 hosts")
+
+    def test_1mixedt3_host3(self):
+        x = HostSorter()
+        for i in range(64):
+            x.addInstance(self.t3_micro)
+        for i in range(12):
+            x.addInstance(self.t3_xl)
+        for i in range(16):
+            x.addInstance(self.t3_2xl)
+        x.placeInstances()
+        self.assertEqual(len(x.hosts["t3"]), 1, "Should be 1 hosts")
+
+    def test_2mixedt3_host(self):
+        x = HostSorter()
+        for i in range(16):
+            x.addInstance(self.t3_nano)
+        for i in range(40):
+            x.addInstance(self.t3_micro)
+        for i in range(40):
+            x.addInstance(self.t3_small)
+        for i in range(22):
+            x.addInstance(self.t3_2xl)
+        x.placeInstances()
+        self.assertEqual(len(x.hosts["t3"]), 2, "Should be 2 hosts")
+
+    def test_2mixedt3_host2(self):
+        x = HostSorter()
+        for i in range(48):
+            x.addInstance(self.t3_2xl)
+        x.placeInstances()
+        self.assertEqual(len(x.hosts["t3"]), 2, "Should be 2 hosts")
 
 
 if __name__ == '__main__':
