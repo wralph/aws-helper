@@ -1,6 +1,6 @@
 import imp
-with open('.config/t3blocks.py', 'rb') as fp:
-    t3blocks = imp.load_module('.config', fp, '.config/__init__.py', ('.py', 'rb', imp.PY_SOURCE))  
+with open('.config/t3.py', 'rb') as fp:
+    t3 = imp.load_module('.config', fp, '.config/__init__.py', ('.py', 'rb', imp.PY_SOURCE))  
 
 class EC2Instance:
     def __init__(self, type, vCPU):
@@ -8,6 +8,11 @@ class EC2Instance:
         self.family = self.__family()
         self.size = self.__size()
         self.vCPU = vCPU
+
+    def getBlockSize(self):
+        if self.family == "t3":
+            return 1
+        return self.vCPU
 
     def __family(self):
         return self.type.rsplit(".")[0]
@@ -24,13 +29,14 @@ class Block:
     def __init__(self, type):
         self.type = type
         self.usage = 0
-        self.vCPU = 0 # to be initialized by inherited class
+        self.capacity = 0 # to be initialized by inherited class
         self.instances = []
 
     # adds an instance to a block. returns False if block has no capacity
     def addInstance(self, instance):
-        if instance.vCPU <= self.__balance():
-            self.usage = self.usage + instance.vCPU
+        instanceSize = instance.getBlockSize()
+        if instanceSize <= self.__balance():
+            self.usage = self.usage + instanceSize
             self.instances.append(instance)
             return True
         else:
@@ -46,17 +52,19 @@ class Block:
         print("--------------")
 
     def __balance(self):
-        return self.vCPU - self.usage
+        return self.capacity - self.usage
 
 class DedicatedHost(Block):    
     def __init__(self, type):
         super().__init__(type)
-        self.vCPU = CapacityProvider().getCapacity(type)
+        self.capacity = CapacityProvider().getCapacity(type)
 
 class T3DedicatedHost(DedicatedHost):
     def __init__(self, type):
         super().__init__(type)
         self.blocks = []
+        self.capacity = t3.maxmemory
+        self.hostUsage = 0
     
     # get values from config
 
@@ -69,10 +77,11 @@ class T3DedicatedHost(DedicatedHost):
 
         # if no existing block, place instance on a new block if possible on existing DH
         if self.__blockCapacityAvailable(instance.size) == True:
-            block = Block(instance.family)
-            block.vCPU = self.__getBlockCapacity(instance.size)
+            block = Block(instance.size)
+            block.capacity = self.__getBlockCapacity(instance.size)
             self.blocks.append(block)
             block.addInstance(instance)
+            self.hostUsage = self.hostUsage + self.__blockMemory(instance.size)
             return True
         
         return False
@@ -84,12 +93,17 @@ class T3DedicatedHost(DedicatedHost):
         print("--------------")
 
     def __blockCapacityAvailable(self, size):
-        # TODO needs to check the current blocks whether anotheron can be added
-        return True
+        # is there enough memory for a new block?
+        if self.capacity - self.hostUsage >= self.__blockMemory(size):
+            return True
+        return False
+
+    def __blockMemory(self, size):
+        mem = t3.blocksizes[size] * t3.memory[size]
+        return t3.blocksizes[size] * t3.memory[size]
 
     def __getBlockCapacity(self, size):
-        # TODO: implement
-        return 8
+        return t3.blocksizes[size]
 
 class HostSorter:
     def __init__(self):
