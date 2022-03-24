@@ -64,11 +64,9 @@ class T3DedicatedHost(DedicatedHost):
         super().__init__(type)
         self.blocks = []
         self.capacity = t3.maxmemory
-        self.hostUsage = 0
-    
-    # get values from config
+        self.hostUsage = 0        
 
-    # add an instance to a T3 host. Bucketing must be respected
+    # add an instance to a T3 host. Blocks must be respected
     def addInstance(self, instance):
         # try to place instance on an existing block
         for block in self.blocks:
@@ -99,7 +97,6 @@ class T3DedicatedHost(DedicatedHost):
         return False
 
     def __blockMemory(self, size):
-        mem = t3.blocksizes[size] * t3.memory[size]
         return t3.blocksizes[size] * t3.memory[size]
 
     def __getBlockCapacity(self, size):
