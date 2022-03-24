@@ -1,26 +1,33 @@
+import imp
+with open('.config/t3blocks.py', 'rb') as fp:
+    t3blocks = imp.load_module('.config', fp, '.config/__init__.py', ('.py', 'rb', imp.PY_SOURCE))  
+
 class EC2Instance:
     def __init__(self, type, vCPU):
         self.type = type
         self.family = self.__family()
+        self.size = self.__size()
         self.vCPU = vCPU
 
     def __family(self):
         return self.type.rsplit(".")[0]
+
+    def __size(self):
+        return self.type.rsplit(".")[1]
 
 class CapacityProvider:
     def getCapacity(self, type):
         if type == "r5" or type == "r5b":
            return 96
 
-
-class DedicatedHost:    
+class Block:
     def __init__(self, type):
         self.type = type
         self.usage = 0
-        self.vCPU = CapacityProvider().getCapacity(type)
+        self.vCPU = 0 # to be initialized by inherited class
         self.instances = []
 
-    # adds an instance to a host. returns False if instance has no capacity
+    # adds an instance to a block. returns False if block has no capacity
     def addInstance(self, instance):
         if instance.vCPU <= self.__balance():
             self.usage = self.usage + instance.vCPU
@@ -30,6 +37,7 @@ class DedicatedHost:
             return False
 
     def printUsage(self):
+        print("Block --------------")
         print("type: " + self.type)
         print("usage: " + str(self.usage))
         print("--instances--")
@@ -39,6 +47,49 @@ class DedicatedHost:
 
     def __balance(self):
         return self.vCPU - self.usage
+
+class DedicatedHost(Block):    
+    def __init__(self, type):
+        super().__init__(type)
+        self.vCPU = CapacityProvider().getCapacity(type)
+
+class T3DedicatedHost(DedicatedHost):
+    def __init__(self, type):
+        super().__init__(type)
+        self.blocks = []
+    
+    # get values from config
+
+    # add an instance to a T3 host. Bucketing must be respected
+    def addInstance(self, instance):
+        # try to place instance on an existing block
+        for block in self.blocks:
+            if block.addInstance(instance) == True:
+                return True
+
+        # if no existing block, place instance on a new block if possible on existing DH
+        if self.__blockCapacityAvailable(instance.size) == True:
+            block = Block(instance.family)
+            block.vCPU = self.__getBlockCapacity(instance.size)
+            self.blocks.append(block)
+            block.addInstance(instance)
+            return True
+        
+        return False
+
+    def printUsage(self):
+        print("T3 Host --------------")
+        for block in self.blocks:
+            block.printUsage()
+        print("--------------")
+
+    def __blockCapacityAvailable(self, size):
+        # TODO needs to check the current blocks whether anotheron can be added
+        return True
+
+    def __getBlockCapacity(self, size):
+        # TODO: implement
+        return 8
 
 class HostSorter:
     def __init__(self):
@@ -77,41 +128,21 @@ class HostSorter:
         self.__placeInstanceOnHost(instanceHosts, instance)
     
     def __placeInstanceOnHost(self, instanceHosts, instance):
-        placed = False
-
         # try to place instance on an existing host
         for host in instanceHosts:
             if host.addInstance(instance) == True:
-                placed = True
-                continue
+                return
 
         # if no existing host, place instance on a new host
-        if placed is False:
+        if instance.family == "t3":
+            newHost = T3DedicatedHost(instance.family)
+        else:
             newHost = DedicatedHost(instance.family)
-            instanceHosts.append(newHost)
-            newHost.addInstance(instance)
+        instanceHosts.append(newHost)
+        newHost.addInstance(instance)
+
 
     def printUsage(self):
         for hostFamily in self.hosts.values():
             for h in hostFamily:
                 h.printUsage()
-
-
-r5_2xl = EC2Instance("r5.2xlarge", 8)
-r5_12xl = EC2Instance("r5.12xlarge", 48)
-r5b_2xl = EC2Instance("r5b.8xlarge", 8)
-r5b_12xl = EC2Instance("r5b.12xlarge", 48)
-
-x = HostSorter()
-x.addInstance(r5_2xl)
-x.addInstance(r5_12xl)
-x.addInstance(r5_12xl)
-x.addInstance(r5_12xl)
-
-x.addInstance(r5b_2xl)
-x.addInstance(r5b_12xl)
-x.addInstance(r5b_12xl)
-x.addInstance(r5b_12xl)
-
-x.placeInstances()
-x.printUsage()
