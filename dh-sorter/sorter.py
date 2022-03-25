@@ -1,4 +1,5 @@
 import imp
+from capacity_provider import CapacityProvider
 with open('.config/t3.py', 'rb') as fp:
     t3 = imp.load_module('.config', fp, '.config/__init__.py', ('.py', 'rb', imp.PY_SOURCE))  
 
@@ -19,11 +20,6 @@ class EC2Instance:
 
     def __size(self):
         return self.type.rsplit(".")[1]
-
-class CapacityProvider:
-    def getCapacity(self, type):
-        if type == "r5" or type == "r5b":
-           return 96
 
 class Block:
     def __init__(self, type):
@@ -55,13 +51,13 @@ class Block:
         return self.capacity - self.usage
 
 class DedicatedHost(Block):    
-    def __init__(self, type):
+    def __init__(self, region, type):
         super().__init__(type)
-        self.capacity = CapacityProvider().getCapacity(type)
+        self.capacity = CapacityProvider.getCapacity(region, type)
 
 class T3DedicatedHost(DedicatedHost):
     def __init__(self, type):
-        super().__init__(type)
+        super().__init__("noregionrequired", type)
         self.blocks = []
         self.capacity = t3.maxmemory
         self.hostUsage = 0        
@@ -103,9 +99,10 @@ class T3DedicatedHost(DedicatedHost):
         return t3.blocksizes[size]
 
 class HostSorter:
-    def __init__(self):
+    def __init__(self, region):
         self.instances = [] # instance list
         self.hosts = {}
+        self.region = region
     
     # add all instances first
     def addInstance(self, instance):
@@ -148,7 +145,7 @@ class HostSorter:
         if instance.family == "t3":
             newHost = T3DedicatedHost(instance.family)
         else:
-            newHost = DedicatedHost(instance.family)
+            newHost = DedicatedHost(self.region, instance.family)
         instanceHosts.append(newHost)
         newHost.addInstance(instance)
 
