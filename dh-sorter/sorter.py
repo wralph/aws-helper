@@ -24,6 +24,7 @@ class EC2Instance:
 class Block:
     def __init__(self, type):
         self.type = type
+        self.compareType = type # modified when no mixed instances within block are allowed
         self.usage = 0
         self.capacity = 0 # to be initialized by inherited class
         self.instances = []
@@ -32,7 +33,7 @@ class Block:
     # adds an instance to a block. returns False if block has no capacity
     def addInstance(self, instance):
         if self.allowMixedTypes == False:
-            if self.type != instance.size:
+            if self.compareType != instance.size:
                 return False
 
         instanceSize = instance.getBlockSize()
@@ -59,7 +60,24 @@ class DedicatedHost(Block):
     def __init__(self, region, type):
         super().__init__(type)
         self.capacity = CapacityProvider.getCapacity(region, type)
-        self.allowMixedTypes = True # TODO: Needs to be defined by actual type https://docs.amazonaws.cn/en_us/AWSEC2/latest/UserGuide/dedicated-hosts-overview.html#dedicated-hosts-limits
+        self.allowMixedTypes = self.__mixedTypesAllowed()
+        self.pinnedBlock = False
+
+    # https://docs.amazonaws.cn/en_us/AWSEC2/latest/UserGuide/dedicated-hosts-overview.html#dedicated-hosts-limits
+    mixedDHTypes = ["t3", "a1", "c5", "m5", "r5", "c5n", "r5n", "m5n"]
+
+    def addInstance(self, instance):
+        if self.pinnedBlock == False:
+            if self.allowMixedTypes == False:
+                self.compareType = instance.size # mark current block as being used by a certain size
+                self.pinnedBlock = True
+        
+        return super().addInstance(instance)
+
+    def __mixedTypesAllowed(self):
+        if self.type in self.mixedDHTypes:
+            return True
+        return False
 
 class T3DedicatedHost(DedicatedHost):
     def __init__(self, type):
