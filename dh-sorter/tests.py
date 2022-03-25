@@ -18,6 +18,14 @@ class TestDedicatedHosts(unittest.TestCase):
         x.placeInstances()
         self.assertEqual(len(x.hosts["r5"]), 1, "Should be 1 host")
 
+    def test_1mixedr5_host(self):
+        x = HostSorter(region)
+        x.addInstance(self.r5_12xl)
+        x.addInstance(self.r5_2xl)
+        x.placeInstances()
+        # x.printUsage()
+        self.assertEqual(len(x.hosts["r5"]), 1, "Should be 1 host")
+
     def test_2r5_host(self):
         x = HostSorter(region)
         for i in range(3):
@@ -37,6 +45,14 @@ class TestDedicatedHosts(unittest.TestCase):
         for i in range(3):
             x.addInstance(self.r5b_12xl)
         x.placeInstances()
+        self.assertEqual(len(x.hosts["r5b"]), 2, "Should be 2 hosts")
+
+    def test_2mixedr5b_hosts(self):
+        x = HostSorter(region)
+        x.addInstance(self.r5b_12xl)
+        x.addInstance(self.r5b_2xl)
+        x.placeInstances()
+        x.printUsage()
         self.assertEqual(len(x.hosts["r5b"]), 2, "Should be 2 hosts")
 
     def test_mixed_hosts(self):
