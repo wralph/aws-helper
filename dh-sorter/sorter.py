@@ -27,9 +27,14 @@ class Block:
         self.usage = 0
         self.capacity = 0 # to be initialized by inherited class
         self.instances = []
+        self.allowMixedTypes = False # to be defined by implementation
 
     # adds an instance to a block. returns False if block has no capacity
     def addInstance(self, instance):
+        if self.allowMixedTypes == False:
+            if self.type != instance.size:
+                return False
+
         instanceSize = instance.getBlockSize()
         if instanceSize <= self.__balance():
             self.usage = self.usage + instanceSize
@@ -54,10 +59,11 @@ class DedicatedHost(Block):
     def __init__(self, region, type):
         super().__init__(type)
         self.capacity = CapacityProvider.getCapacity(region, type)
+        self.allowMixedTypes = True # TODO: Needs to be defined by actual type https://docs.amazonaws.cn/en_us/AWSEC2/latest/UserGuide/dedicated-hosts-overview.html#dedicated-hosts-limits
 
 class T3DedicatedHost(DedicatedHost):
     def __init__(self, type):
-        super().__init__("noregionrequired", type)
+        super().__init__("noregionrequired", type)        
         self.blocks = []
         self.capacity = t3.maxmemory
         self.hostUsage = 0        
@@ -72,6 +78,7 @@ class T3DedicatedHost(DedicatedHost):
         # if no existing block, place instance on a new block if possible on existing DH
         if self.__blockCapacityAvailable(instance.size) == True:
             block = Block(instance.size)
+            block.allowMixedTypes = False # a block has no mixed instance types within T3
             block.capacity = self.__getBlockCapacity(instance.size)
             self.blocks.append(block)
             block.addInstance(instance)

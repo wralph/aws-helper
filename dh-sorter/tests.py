@@ -104,7 +104,9 @@ class TestT3DedicatedHosts(unittest.TestCase):
             x.addInstance(self.t3_small)
         for i in range(22):
             x.addInstance(self.t3_2xl)
-        x.placeInstances()
+        x.placeInstances()        
+        # x.printUsage()
+        PlacementValidation().validateNoMixedInstances(x)
         self.assertEqual(len(x.hosts["t3"]), 2, "Should be 2 hosts")
 
     def test_2mixedt3_host2(self):
@@ -113,6 +115,26 @@ class TestT3DedicatedHosts(unittest.TestCase):
             x.addInstance(self.t3_2xl)
         x.placeInstances()
         self.assertEqual(len(x.hosts["t3"]), 2, "Should be 2 hosts")
+
+class PlacementValidation:
+    def validateNoMixedInstances(self, sorter):
+        for hostType in sorter.hosts.values():
+            for h in hostType:
+                if h.type == "t3":
+                    for b in h.blocks:
+                        self.__checkInstances(b.instances)
+                else:
+                    self.__checkInstances(h.instances)
+
+
+    def __checkInstances(self, instances):
+        type = ""
+        for i in instances:
+            if type == "":
+                type = i.type
+            
+            if type != i.type:
+                raise RuntimeError("Mixed blocks found where the configuration does not allow them!")
 
 
 if __name__ == '__main__':
