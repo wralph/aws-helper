@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "sam-dh-sorter"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1omqlez03qvwf"
+s3_prefix = "sam-dh-sorter"
+region = "eu-west-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+image_repositories = []

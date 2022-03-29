@@ -1,14 +1,13 @@
 import imp
 from capacity_provider import CapacityProvider
-with open('.config/t3.py', 'rb') as fp:
-    t3 = imp.load_module('.config', fp, '.config/__init__.py', ('.py', 'rb', imp.PY_SOURCE))  
+from config import t3
 
 class EC2Instance:
     def __init__(self, type, vCPU):
         self.type = type
         self.family = self.__family()
         self.size = self.__size()
-        self.vCPU = vCPU
+        self.vCPU = CapacityProvider.getEC2Capacity("eu-west-1", type)
 
     def getBlockSize(self):
         if self.family == "t3":

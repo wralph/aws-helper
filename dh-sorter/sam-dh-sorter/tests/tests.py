@@ -1,6 +1,11 @@
 import unittest
+
+import sys
+sys.path.append('../dh_sorter')
+
 from sorter import EC2Instance 
 from sorter import HostSorter 
+from capacity_provider import CapacityProvider
 
 region = "eu-central-1"
 
@@ -52,7 +57,7 @@ class TestDedicatedHosts(unittest.TestCase):
         x.addInstance(self.r5b_12xl)
         x.addInstance(self.r5b_2xl)
         x.placeInstances()
-        x.printUsage()
+        # x.printUsage()
         self.assertEqual(len(x.hosts["r5b"]), 2, "Should be 2 hosts")
 
     def test_mixed_hosts(self):
@@ -159,6 +164,10 @@ class PlacementValidation:
             if type != i.type:
                 raise RuntimeError("Mixed blocks found where the configuration does not allow them!")
 
+class TestCapacityProvider(unittest.TestCase):
+    def test_r52xl_8vCPU(self):
+        vCPU = CapacityProvider.getEC2Capacity("eu-west-1", "r5.2xlarge")
+        self.assertEqual(vCPU, 8, "Should be 8 vCPU")
 
 if __name__ == '__main__':
     unittest.main()
