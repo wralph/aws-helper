@@ -31,7 +31,7 @@ def lambda_handler(event, context):
             if host.type == "t3":
                 rHost = {}
                 rHost["type"] = host.type
-                rHost["usage"] = host.hostUsage
+                rHost["mem-usage"] = host.hostUsage
                 instanceCount = 0
                 rHost["instances"] = []
                 for block in host.blocks:              
@@ -44,20 +44,18 @@ def lambda_handler(event, context):
             else:
                 rHost = {}
                 rHost["type"] = host.type
-                rHost["usage"] = host.usage
+                rHost["vcpu-usage"] = host.usage
                 rHost["instanceCount"] = len(host.instances)
                 rHost["instances"] = []
                 for instance in host.instances:
                     rHost["instances"].append(instance.type)
                 processedData.append(rHost)
 
-    print(processedData)
-
     returnData = {
         "statusCode": 200,
         "body": json.dumps(processedData),
     }
 
-    print(returnData)
+    # print(returnData)
 
     return returnData
