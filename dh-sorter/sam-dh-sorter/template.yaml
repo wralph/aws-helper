@@ -17,6 +17,8 @@ Resources:
       CodeUri: dh_sorter/
       Handler: app.lambda_handler
       Runtime: python3.9
+      Timeout: 20
+      MemorySize: 1024
       Architectures:
         - x86_64
       Events:
