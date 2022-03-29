@@ -28,6 +28,7 @@ class Block:
         self.capacity = 0 # to be initialized by inherited class
         self.instances = []
         self.allowMixedTypes = False # to be defined by implementation
+        self.maxCapacityReached = False
 
     # adds an instance to a block. returns False if block has no capacity
     def addInstance(self, instance):
@@ -35,12 +36,17 @@ class Block:
             if self.compareType != instance.size:
                 return False
 
-        instanceSize = instance.getBlockSize()
+        instanceSize = instance.getBlockSize()        
         if instanceSize <= self.__balance():
             self.usage = self.usage + instanceSize
             self.instances.append(instance)
+
+            # if max capacity. block must not be checked further
+            if self.usage == self.capacity:
+                self.maxCapacityReached = True
+
             return True
-        else:
+        else:            
             return False
 
     def printUsage(self):
@@ -84,12 +90,15 @@ class T3DedicatedHost(DedicatedHost):
         self.blocks = []
         self.capacity = t3.maxmemory
         self.hostUsage = 0
+        self.maxedBlocks = []
 
     # add an instance to a T3 host. Blocks must be respected
     def addInstance(self, instance):
         # try to place instance on an existing block
         for block in self.blocks:
             if block.addInstance(instance) == True:
+                if block.maxCapacityReached == True:
+                    self.__cleanupBlocks(block)
                 return True
 
         # if no existing block, place instance on a new block if possible on existing DH
@@ -122,11 +131,22 @@ class T3DedicatedHost(DedicatedHost):
     def __getBlockCapacity(self, size):
         return t3.blocksizes[size]
 
+    # purely for performance to not check a maxed host again
+    def __cleanupBlocks(self, block):        
+        self.maxedBlocks.append(block)
+        self.blocks.remove(block) # next iteration can be done quicker
+
+    # add maxed blocks to final list of blocks
+    def finalize(self):
+        for block in self.maxedBlocks:
+            self.blocks.append(block)
+
 class HostSorter:
     def __init__(self, region):
         self.instances = [] # instance list
         self.hosts = {}
-        self.region = region
+        self.maxedHosts = [] # Hosts which reached max capacity
+        self.region = region        
     
     # add all instances first
     def addInstance(self, instance):
@@ -136,7 +156,10 @@ class HostSorter:
     def placeInstances(self):
         self.__sortInstances() # sort biggest vCPU to smallest
         for i in self.instances:
-            self.__placeInstance(i)
+            self.__placeInstance(i)                
+        
+        self.__finalizeT3Hosts()
+        self.__addMaxedHostsToCategory()        
 
     def printUsage(self):
         for hostFamily in self.hosts.values():
@@ -163,6 +186,8 @@ class HostSorter:
         # try to place instance on an existing host
         for host in instanceHosts:
             if host.addInstance(instance) == True:
+                if host.maxCapacityReached == True:
+                    self.__cleanupHosts(instanceHosts, host)
                 return
 
         # if no existing host, place instance on a new host
@@ -173,6 +198,20 @@ class HostSorter:
         instanceHosts.append(newHost)
         newHost.addInstance(instance)
 
+    # purely for performance to not check a maxed host again
+    def __cleanupHosts(self, instanceHosts, host):        
+        self.maxedHosts.append(host)
+        instanceHosts.remove(host) # next iteration can be done quicker
+
+    # add maxed hosts to final list of hosts
+    def __addMaxedHostsToCategory(self):
+        for host in self.maxedHosts:
+            self.hosts[host.type].append(host)
+
+    def __finalizeT3Hosts(self):
+        if "t3" in self.hosts:
+            for host in self.hosts["t3"]:
+                host.finalize()
 
     def printUsage(self):
         for hostFamily in self.hosts.values():
