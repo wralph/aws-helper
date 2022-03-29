@@ -18,9 +18,9 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.9
       Timeout: 20
-      MemorySize: 1024
+      MemorySize: 512
       Architectures:
-        - x86_64
+        - arm64
       Events:
         DhSorter:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
