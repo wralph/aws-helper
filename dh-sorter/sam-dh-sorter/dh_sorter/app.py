@@ -6,9 +6,6 @@ from capacity_provider import CapacityProvider
 
 
 def lambda_handler(event, context):
-    # print("entering function")
-    # print(context)
-    # print(event)
 
     data = json.loads(event["body"])
     print(data)
@@ -27,10 +24,11 @@ def lambda_handler(event, context):
     # create a result which can be serialized
     processedData = []
     for hosts in x.hosts:
-        for host in x.hosts[hosts]:            
+        for host in x.hosts[hosts]:
             if host.type == "t3":
                 rHost = {}
                 rHost["type"] = host.type
+                rHost["mem-capacity"] = host.capacity
                 rHost["mem-usage"] = host.hostUsage
                 instanceCount = 0
                 rHost["instances"] = []
@@ -44,6 +42,7 @@ def lambda_handler(event, context):
             else:
                 rHost = {}
                 rHost["type"] = host.type
+                rHost["vcpu-capacity"] = host.capacity
                 rHost["vcpu-usage"] = host.usage
                 rHost["instanceCount"] = len(host.instances)
                 rHost["instances"] = []

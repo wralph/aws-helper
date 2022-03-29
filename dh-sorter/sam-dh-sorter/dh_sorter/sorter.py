@@ -83,7 +83,7 @@ class T3DedicatedHost(DedicatedHost):
         super().__init__("noregionrequired", type)        
         self.blocks = []
         self.capacity = t3.maxmemory
-        self.hostUsage = 0        
+        self.hostUsage = 0
 
     # add an instance to a T3 host. Blocks must be respected
     def addInstance(self, instance):
