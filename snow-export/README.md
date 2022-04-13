@@ -15,8 +15,16 @@ The script currently is self containing. To run the script in your AWS environme
 
 Ensure you followed the [quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html) to use the boto3 API.
 
+#### Example 1
+To see an example of the output execute it like this:
 ```bash
 python.exe snow_export.py
+```
+
+#### Example 2
+To store the output to a file execute it like this:
+```bash
+python.exe snow_export.py >> myexport.xml
 ```
 
 ### Disclaimer
@@ -30,6 +38,7 @@ TODO: Add information on supported Snow software versions or the tested one.
 - A definition how to setup the Snow software
 - A definition how to roll out the solution within an AWS Organization. Ideas could be to leverage SSM Documents (can be executed or [shared](https://docs.aws.amazon.com/systems-manager/latest/userguide/ssm-how-to-share.html) within an AWS Organization) or AWS Lambda functions within participating accounts.
 - An import mechanism from Snow software license configurations to AWS License Manager
+- To store the output directly in a file, pipe it to a .xml filename that matches your specification.
 
 ### Contributors
 - Ralph Waldenmaier (AWS)
