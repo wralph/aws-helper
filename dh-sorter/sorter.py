@@ -64,7 +64,7 @@ class DedicatedHost(Block):
         self.pinnedBlock = False
 
     # https://docs.amazonaws.cn/en_us/AWSEC2/latest/UserGuide/dedicated-hosts-overview.html#dedicated-hosts-limits
-    mixedDHTypes = ["t3", "a1", "c5", "m5", "r5", "c5n", "r5n", "m5n"]
+    mixedDHTypes = ["t3", "a1", "c5", "m5", "r5", "c5n", "r5n", "m5n", "m6i", "C6i", "r6i"]
 
     def addInstance(self, instance):
         if self.pinnedBlock == False:
